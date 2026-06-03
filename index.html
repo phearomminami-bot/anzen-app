@@ -11962,21 +11962,24 @@ var UserPill = ({
     lang
   } = useAppActions();
   var u = (() => {
-    if (role === 'instructor' && window.__loggedInInstructorId) {
-      var sf = (window.__staffData || []).find(s => s.instId === window.__loggedInInstructorId || s.id === window.__loggedInInstructorId);
-      if (sf) return {
-        km: sf.name,
-        en: sf.en,
-        title: sf.roleKm ? sf.roleKm + ' · ' + sf.role : sf.role,
-        avatar: sf.photo
-      };
-      var inst = (typeof INSTRUCTORS !== 'undefined' ? INSTRUCTORS : []).find(i => i.id === window.__loggedInInstructorId);
-      if (inst) return {
-        km: inst.name,
-        en: inst.en,
-        title: inst.role || 'Instructor',
-        avatar: inst.photo || 'inst-1'
-      };
+    if (role === 'instructor') {
+      if (window.__loggedInInstructorData) return window.__loggedInInstructorData;
+      if (window.__loggedInInstructorId) {
+        var sf = (window.__staffData || []).find(s => s.instId === window.__loggedInInstructorId || s.id === window.__loggedInInstructorId);
+        if (sf) return {
+          km: sf.name,
+          en: sf.en,
+          title: sf.roleKm ? sf.roleKm + ' · ' + sf.role : sf.role,
+          avatar: sf.photo
+        };
+        var inst = (typeof INSTRUCTORS !== 'undefined' ? INSTRUCTORS : []).find(i => i.id === window.__loggedInInstructorId);
+        if (inst) return {
+          km: inst.name,
+          en: inst.en,
+          title: inst.role || 'Instructor',
+          avatar: inst.photo || 'inst-1'
+        };
+      }
     }
     return LOGIN_USERS[role] || LOGIN_USERS.admin;
   })();
@@ -55850,6 +55853,8 @@ function App() {
     }
   };
   var logout = () => {
+    window.__loggedInInstructorId = null;
+    window.__loggedInInstructorData = null;
     setAuthed(false);
     window.__sbReady = false;
     if (window.__sbSignOut) window.__sbSignOut();
@@ -56549,12 +56554,13 @@ var LoginScreen = ({
     var photo = sf?.photo || instFinal?.photo || 'inst-1';
     var roleTitle = sf ? sf.roleKm ? sf.roleKm + ' · ' + sf.role : sf.role : instFinal?.role || 'Instructor';
     window.__loggedInInstructorId = instFinal?.id || sf?.instId || id;
-    LOGIN_USERS.instructor = {
+    window.__loggedInInstructorData = {
       km: name,
       en: nameEn,
       title: roleTitle,
       avatar: photo
     };
+    LOGIN_USERS.instructor = window.__loggedInInstructorData;
     setErr('');
     onLogin('instructor');
   };
