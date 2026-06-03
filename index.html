@@ -300,6 +300,9 @@ window.__trRegistry = {
   "Payment reminder: please settle your balance to continue lessons.": "ការ​​ទូទាត់​ការ​ជំពាក់​ · Your payment is due. Please settle to continue lessons.",
   "Great work! Keep it up — you\\'re making excellent progress.": "ការ​ស្វែង​រក​ ​ · Great work! Keep it up — you\\'re making excellent progress.",
   "Message sent": "ផ្ញើ​សារ​ជោគជ័យ",
+  "Password updated": "បាន​ផ្លាស់ Password",
+  "Account suspended": "គណនីត្រូវបានផ្អាក",
+  "Account activated": "គណនីដំណើរការ",
   "Book": "កក់​",
   "Schedule ·": "កាលវិភាគ​​ ·",
   "upcoming": "ខាង​មុខ",
@@ -321,6 +324,18 @@ window.__trRegistry = {
   "INSTRUCTOR NOTE": "មតិ​គ្រូ",
   "remove": "លុប",
   "Add instructor note · …": "បន្ថែម​មតិ​ · …",
+  "Suspended": "ផ្អាក",
+  "Active": "កំពុង​ដំណើរ​ការ",
+  "Hide": "លាក់",
+  "Show": "បង្ហាញ",
+  "New password": "Password ថ្មី",
+  "Change Password": "ផ្លាស់​ Password",
+  "Re-enable": "ដំណើរការ​វិញ",
+  "Suspend": "ផ្អាក",
+  "This account is suspended — student cannot log in": "គណនីនេះត្រូវបានផ្អាក — សិស្សមិនអាចចូលប្រព័ន្ធបាន",
+  "Change": "ផ្លាស់ប្ដូរ",
+  "Re-enable account": "ដំណើរការ​វិញ",
+  "Suspend account": "ផ្អាក​គណនី",
   "Deactivate staff?": "ផ្អាក​បុគ្គលិក?",
   "This will suspend this staff member\\'s access.": "សកម្មភាព​នេះ​នឹង​ផ្អាក​ការ​ចូល​ប្រើ​ប្រាស់​របស់​បុគ្គលិក​រូប​នេះ",
   "Deactivate": "ផ្អាក",
@@ -587,12 +602,8 @@ window.__trRegistry = {
   "days": "ថ្ងៃ",
   "DOCS": "ឯកសារ",
   "ACCOUNT / LOGIN": "គណនីប្រើប្រាស់",
-  "Hide": "លាក់",
-  "Show": "បង្ហាញ",
-  "Change": "ផ្លាស់ប្ដូរ",
   "No login account set": "មិន​ទាន់​មាន​គណនី",
   "Set Password": "កំណត់​ Password",
-  "New password": "Password ថ្មី",
   "PERSONAL": "ផ្ទាល់ខ្លួន",
   "Name (KH)": "ឈ្មោះ (ខ្មែរ)",
   "Name (EN) *": "ឈ្មោះ (EN)",
@@ -735,7 +746,6 @@ window.__trRegistry = {
   "Toggle vehicles visible in Vehicle management": "ធ្វើ​ឲ្យ​យានយន្ត​មើលឃើញ​នៅ​ Vehicle management",
   "Payment recorded": "បានចងចាំការបង់ · Payment recorded",
   "Student removed": "បានលុបសិស្ស",
-  "Active": "កំពុង​ដំណើរ​ការ",
   "Exam": "នឹងប្រឡង",
   "Back": "ត្រឡប់",
   "Age": "អាយុ",
@@ -1172,6 +1182,7 @@ window.__trRegistry = {
   "Signing in…": "កំពុង​ចូល…",
   "Use demo mode": "ប្រើ​របៀប Demo",
   "Incorrect Student ID or password": "Student ID ឬ Password មិន​ត្រឹម​ត្រូវ",
+  "Account suspended — please contact the school": "គណនីត្រូវបានផ្អាក — សូម​ទំនាក់ទំនង​គ្រឹះស្ថាន",
   "Please enter ID and password": "សូម​បំពេញ ID និង Password",
   "Incorrect ID or password": "ID ឬ Password មិន​ត្រឹម​ត្រូវ",
   "Demo account — sign in without a password. Real data is used.": "គណនី​ Demo — ចូល​ដោយ​មិន​ចាំបាច់​លេខ​សម្ងាត់ ។",
@@ -9180,6 +9191,10 @@ var StudentProfile = ({
   var [lessonFilter, setLessonFilter] = React.useState('all');
   var [expandedLesson, setExpandedLesson] = React.useState(null);
   var [msgText, setMsgText] = React.useState('');
+  var [acctShowPw, setAcctShowPw] = React.useState(false);
+  var [acctChanging, setAcctChanging] = React.useState(false);
+  var [acctNewPw, setAcctNewPw] = React.useState('');
+  var [, forceUpdate] = React.useReducer(x => x + 1, 0);
   var [sentMsgs, setSentMsgs] = React.useState([{
     time: 'ឧសភា 28 · 14:32',
     text: 'ការ​សាកល្បង​ក្នុង​ទីក្រុង​ត្រូវ​បាន​ណាត់​នៅ​ថ្ងៃ​ច័ន្ទ 9:00 · Your city lesson is scheduled Monday 9:00 AM.',
@@ -9267,6 +9282,21 @@ var StudentProfile = ({
     setMsgText('');
     toast(tr('បាន​ផ្ញើ​សារ · Message sent', 'Message sent'), 'good');
   };
+  var saveStudentPw = () => {
+    if (!acctNewPw.trim()) return;
+    s.password = acctNewPw.trim();
+    if (window.saveAllData) window.saveAllData();
+    setAcctChanging(false);
+    setAcctNewPw('');
+    forceUpdate();
+    toast(tr('បាន​ផ្លាស់ Password', 'Password updated'), 'good');
+  };
+  var toggleStudentSuspend = () => {
+    s.account_disabled = !s.account_disabled;
+    if (window.saveAllData) window.saveAllData();
+    forceUpdate();
+    toast(s.account_disabled ? tr('គណនីត្រូវបានផ្អាក', 'Account suspended') : tr('គណនីដំណើរការ', 'Account activated'), s.account_disabled ? 'warn' : 'good');
+  };
   var TABS = [{
     id: 'info',
     km: 'ព័ត៌មាន',
@@ -9287,7 +9317,11 @@ var StudentProfile = ({
     id: 'curriculum',
     km: 'វគ្គ​សិក្សា',
     en: 'Curriculum'
-  }];
+  }, ...(role === 'admin' ? [{
+    id: 'account',
+    km: 'គណនី',
+    en: 'Account'
+  }] : [])];
   var LESSON_COLOR_MAP = typeof LESSON_COLORS !== 'undefined' ? LESSON_COLORS : {};
   return React.createElement("div", {
     style: {
@@ -10417,17 +10451,210 @@ var StudentProfile = ({
         onClick: () => saveFeedback(topic.id)
       }, tr('រក្សា', 'Save'))))));
     }));
-  })));
+  })), tab === 'account' && role === 'admin' && React.createElement("div", {
+    style: {
+      flex: 1,
+      overflow: 'auto',
+      padding: '20px 24px'
+    }
+  }, React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: 'var(--ink-3)',
+      letterSpacing: '.06em',
+      fontFamily: '"JetBrains Mono",monospace',
+      marginBottom: 16
+    }
+  }, "LOGIN ACCOUNT \xB7 \u1782\u178E\u1793\u17B8\u200B\u1785\u17BC\u179B"), React.createElement("div", {
+    style: {
+      background: 'var(--surface-muted)',
+      borderRadius: 12,
+      padding: 16,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: 'var(--ink-3)',
+      width: 80,
+      flexShrink: 0
+    }
+  }, "USERNAME"), React.createElement("span", {
+    style: {
+      fontFamily: '"JetBrains Mono",monospace',
+      fontSize: 14,
+      fontWeight: 600,
+      flex: 1
+    }
+  }, s.id), React.createElement("span", {
+    style: {
+      padding: '3px 10px',
+      borderRadius: 999,
+      fontSize: 11,
+      fontWeight: 600,
+      background: s.account_disabled ? 'var(--danger-soft,#fee)' : 'var(--good-soft,#e6faf0)',
+      color: s.account_disabled ? 'var(--danger)' : 'var(--good)'
+    }
+  }, s.account_disabled ? tr('ផ្អាក', 'Suspended') : tr('សកម្ម', 'Active'))), React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: 'var(--ink-3)',
+      width: 80,
+      flexShrink: 0
+    }
+  }, "PASSWORD"), s.password ? React.createElement("span", {
+    style: {
+      fontFamily: '"JetBrains Mono",monospace',
+      fontSize: 14,
+      flex: 1,
+      letterSpacing: '.08em'
+    }
+  }, acctShowPw ? s.password : '••••••') : React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: 'var(--ink-3)',
+      flex: 1
+    }
+  }, "\u2014"), React.createElement("button", {
+    onClick: () => setAcctShowPw(p => !p),
+    style: {
+      fontSize: 12,
+      color: 'var(--accent)',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '2px 6px'
+    }
+  }, acctShowPw ? tr('លាក់', 'Hide') : tr('មើល', 'Show')))), acctChanging ? React.createElement("div", {
+    style: {
+      marginTop: 14,
+      display: 'flex',
+      gap: 8
+    }
+  }, React.createElement("input", {
+    value: acctNewPw,
+    onChange: e => setAcctNewPw(e.target.value),
+    placeholder: tr('Password ថ្មី', 'New password'),
+    style: {
+      flex: 1,
+      padding: '8px 12px',
+      borderRadius: 8,
+      border: '1px solid var(--border)',
+      fontSize: 13,
+      fontFamily: '"JetBrains Mono",monospace',
+      background: 'var(--surface)'
+    }
+  }), React.createElement(Btn, {
+    kind: "primary",
+    size: "md",
+    onClick: saveStudentPw
+  }, tr('រក្សា', 'Save')), React.createElement(Btn, {
+    kind: "ghost",
+    size: "md",
+    onClick: () => {
+      setAcctChanging(false);
+      setAcctNewPw('');
+    }
+  }, "\u2715")) : React.createElement("div", {
+    style: {
+      marginTop: 14,
+      display: 'flex',
+      gap: 8
+    }
+  }, React.createElement(Btn, {
+    kind: "ghost",
+    size: "md",
+    onClick: () => setAcctChanging(true),
+    icon: React.createElement(Icon, {
+      name: "edit",
+      size: 13
+    }),
+    style: {
+      flex: 1,
+      justifyContent: 'center'
+    }
+  }, tr('ផ្លាស់​ Password', 'Change Password')), React.createElement(Btn, {
+    kind: s.account_disabled ? 'primary' : 'ghost',
+    size: "md",
+    onClick: toggleStudentSuspend,
+    style: {
+      flex: 1,
+      justifyContent: 'center',
+      color: s.account_disabled ? undefined : 'var(--danger)',
+      borderColor: s.account_disabled ? undefined : 'var(--danger)'
+    }
+  }, s.account_disabled ? tr('ដំណើរការ​វិញ', 'Re-enable') : tr('ផ្អាក', 'Suspend'))), s.account_disabled && React.createElement("div", {
+    style: {
+      marginTop: 12,
+      padding: '10px 14px',
+      borderRadius: 8,
+      background: 'var(--danger-soft,#fee2e2)',
+      border: '1px solid var(--danger,#dc2626)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }
+  }, React.createElement(Icon, {
+    name: "x",
+    size: 14,
+    style: {
+      color: 'var(--danger)'
+    }
+  }), React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: 'var(--danger)'
+    }
+  }, tr('គណនីនេះត្រូវបានផ្អាក — សិស្សមិនអាចចូលប្រព័ន្ធបាន', 'This account is suspended — student cannot log in')))));
 };
 var InstructorProfile = ({
   instructor,
   onClose
 }) => {
   var {
-    toast
+    toast,
+    role,
+    tr
   } = useAppActions();
+  var [showPw, setShowPw] = React.useState(false);
+  var [changingPw, setChangingPw] = React.useState(false);
+  var [newPw, setNewPw] = React.useState('');
+  var [, forceUpdate] = React.useReducer(x => x + 1, 0);
   if (!instructor) return null;
   var i = instructor;
+  var saveNewPw = () => {
+    if (!newPw.trim()) return;
+    i.password = newPw.trim();
+    var sf = (window.__staffData || []).find(s => s.instId === i.id || s.id === i.id);
+    if (sf) sf.password = newPw.trim();
+    if (window.saveAllData) window.saveAllData();
+    setChangingPw(false);
+    setNewPw('');
+    forceUpdate();
+    toast(tr('បាន​ផ្លាស់ Password', 'Password updated'), 'good');
+  };
+  var toggleSuspend = () => {
+    i.account_disabled = !i.account_disabled;
+    var sf = (window.__staffData || []).find(s => s.instId === i.id || s.id === i.id);
+    if (sf) sf.account_disabled = i.account_disabled;
+    if (window.saveAllData) window.saveAllData();
+    forceUpdate();
+    toast(i.account_disabled ? tr('គណនីត្រូវបានផ្អាក', 'Account suspended') : tr('គណនីដំណើរការ', 'Account activated'), i.account_disabled ? 'warn' : 'good');
+  };
   return React.createElement("div", null, React.createElement(Photo, {
     tag: i.photo,
     w: "100%",
@@ -10541,7 +10768,135 @@ var InstructorProfile = ({
     tone: "neutral"
   }, "Class ", c)), React.createElement(Badge, {
     tone: "neutral"
-  }, i.lang))), React.createElement("div", {
+  }, i.lang))), role === 'admin' && React.createElement("div", {
+    style: {
+      marginTop: 14,
+      padding: '14px 0',
+      borderTop: '1px solid var(--border)'
+    }
+  }, React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: 'var(--ink-3)',
+      letterSpacing: '.05em',
+      fontFamily: '"JetBrains Mono",monospace',
+      marginBottom: 10
+    }
+  }, "ACCOUNT \xB7 \u1782\u178E\u1793\u17B8"), React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 8
+    }
+  }, React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: 'var(--ink-3)',
+      width: 72,
+      flexShrink: 0
+    }
+  }, "USERNAME"), React.createElement("span", {
+    style: {
+      fontFamily: '"JetBrains Mono",monospace',
+      fontSize: 13,
+      fontWeight: 600
+    }
+  }, i.id), React.createElement("span", {
+    style: {
+      marginLeft: 'auto',
+      padding: '2px 8px',
+      borderRadius: 999,
+      fontSize: 11,
+      fontWeight: 600,
+      background: i.account_disabled ? 'var(--danger-soft,#fee)' : 'var(--good-soft,#e6faf0)',
+      color: i.account_disabled ? 'var(--danger)' : 'var(--good)'
+    }
+  }, i.account_disabled ? tr('ផ្អាក', 'Suspended') : tr('សកម្ម', 'Active'))), React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10
+    }
+  }, React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: 'var(--ink-3)',
+      width: 72,
+      flexShrink: 0
+    }
+  }, "PASSWORD"), i.password ? React.createElement("span", {
+    style: {
+      fontFamily: '"JetBrains Mono",monospace',
+      fontSize: 13,
+      letterSpacing: '.08em'
+    }
+  }, showPw ? i.password : '••••••') : React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: 'var(--ink-3)'
+    }
+  }, "\u2014"), React.createElement("button", {
+    onClick: () => setShowPw(p => !p),
+    style: {
+      marginLeft: 4,
+      fontSize: 11,
+      color: 'var(--accent)',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '2px 4px'
+    }
+  }, showPw ? tr('លាក់', 'Hide') : tr('មើល', 'Show')), React.createElement("button", {
+    onClick: () => setChangingPw(p => !p),
+    style: {
+      fontSize: 11,
+      color: 'var(--accent)',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '2px 4px'
+    }
+  }, tr('កែ', 'Change'))), changingPw && React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 6,
+      marginBottom: 10
+    }
+  }, React.createElement("input", {
+    value: newPw,
+    onChange: e => setNewPw(e.target.value),
+    placeholder: tr('Password ថ្មី', 'New password'),
+    style: {
+      flex: 1,
+      padding: '6px 10px',
+      borderRadius: 6,
+      border: '1px solid var(--border)',
+      fontSize: 13,
+      fontFamily: '"JetBrains Mono",monospace',
+      background: 'var(--surface)'
+    }
+  }), React.createElement(Btn, {
+    kind: "primary",
+    size: "sm",
+    onClick: saveNewPw
+  }, tr('រក្សា', 'Save')), React.createElement(Btn, {
+    kind: "ghost",
+    size: "sm",
+    onClick: () => {
+      setChangingPw(false);
+      setNewPw('');
+    }
+  }, "\u2715")), React.createElement(Btn, {
+    kind: i.account_disabled ? 'primary' : 'ghost',
+    size: "sm",
+    onClick: toggleSuspend,
+    style: {
+      color: i.account_disabled ? undefined : 'var(--danger)',
+      borderColor: i.account_disabled ? undefined : 'var(--danger)'
+    }
+  }, i.account_disabled ? tr('ដំណើរការ​វិញ', 'Re-enable account') : tr('ផ្អាក​គណនី', 'Suspend account'))), React.createElement("div", {
     style: {
       marginTop: 14,
       display: 'flex',
@@ -56146,6 +56501,10 @@ var LoginScreen = ({
       setErr(tr('Student ID ឬ Password មិន​ត្រឹម​ត្រូវ', 'Incorrect Student ID or password'));
       return;
     }
+    if (student.account_disabled) {
+      setErr(tr('គណនីត្រូវបានផ្អាក — សូម​ទំនាក់ទំនង​គ្រឹះស្ថាន', 'Account suspended — please contact the school'));
+      return;
+    }
     setErr('');
     onStudentLogin(student);
   };
@@ -56162,6 +56521,10 @@ var LoginScreen = ({
     var instFinal = inst || (sf?.instId ? (typeof INSTRUCTORS !== 'undefined' ? INSTRUCTORS : []).find(i => i.id === sf.instId) : null);
     if (!inst && !sf) {
       setErr(tr('ID ឬ Password មិន​ត្រឹម​ត្រូវ', 'Incorrect ID or password'));
+      return;
+    }
+    if (instFinal?.account_disabled || sf?.account_disabled) {
+      setErr(tr('គណនីត្រូវបានផ្អាក — សូម​ទំនាក់ទំនង​គ្រឹះស្ថាន', 'Account suspended — please contact the school'));
       return;
     }
     var name = sf?.name || instFinal?.name || id;
