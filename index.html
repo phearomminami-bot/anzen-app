@@ -11846,6 +11846,12 @@ var NAV_ITEMS = {
     jp: '生徒',
     icon: 'users'
   }, {
+    id: 'instructors',
+    km: 'គ្រូ',
+    en: 'Instructors',
+    jp: 'インストラクター',
+    icon: 'flag'
+  }, {
     id: 'lessons',
     km: 'មេរៀន',
     en: 'Lessons',
@@ -11963,6 +11969,13 @@ var UserPill = ({
         en: sf.en,
         title: sf.roleKm ? sf.roleKm + ' · ' + sf.role : sf.role,
         avatar: sf.photo
+      };
+      var inst = (typeof INSTRUCTORS !== 'undefined' ? INSTRUCTORS : []).find(i => i.id === window.__loggedInInstructorId);
+      if (inst) return {
+        km: inst.name,
+        en: inst.en,
+        title: inst.role || 'Instructor',
+        avatar: inst.photo || 'inst-1'
       };
     }
     return LOGIN_USERS[role] || LOGIN_USERS.admin;
@@ -22779,6 +22792,7 @@ var SfDetailRow = ({
   var weekLessons = inst ? LESSONS.filter(l => l.instId === inst.id && l.status !== 'cancelled') : [];
   var myStudents = inst ? STUDENTS.filter(st => st.inst === inst.en || st.inst === inst.name) : [];
   var loginId = inst?.id || s.id;
+  var displayPw = s.password || inst?.password;
   var saveNewPw = () => {
     if (!newPw.trim()) return;
     s.password = newPw.trim();
@@ -23176,7 +23190,7 @@ var SfDetailRow = ({
       marginBottom: 10,
       fontFamily: '"JetBrains Mono",monospace'
     }
-  }, tr('គណនីប្រើប្រាស់', 'ACCOUNT / LOGIN')), s.password ? React.createElement("div", {
+  }, tr('គណនីប្រើប្រាស់', 'ACCOUNT / LOGIN')), displayPw ? React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -23217,7 +23231,7 @@ var SfDetailRow = ({
       letterSpacing: '.1em',
       color: 'var(--ink)'
     }
-  }, showPw ? s.password : '••••••'), React.createElement("button", {
+  }, showPw ? displayPw : '••••••'), React.createElement("button", {
     onClick: () => setShowPw(v => !v),
     style: {
       padding: '2px 8px',
@@ -55797,6 +55811,9 @@ function App() {
     };
   }, []);
   var login = r => {
+    if (r === 'instructor' && !window.__loggedInInstructorId) {
+      window.__loggedInInstructorId = 'I-01';
+    }
     setTweak('role', r);
     setAuthed(true);
     setCurrent('dashboard');
